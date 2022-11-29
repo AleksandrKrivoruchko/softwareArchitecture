@@ -64,7 +64,7 @@ class Freelancer extends Employee{
 
     @Override
     public String toString() {
-        return String.format("%s %s; Фрилансер; Среднемесячная заработная плата: %.2f (руб.); Почасовая ставка: %.2f (руб.)",
+        return String.format("%10s %10s; Фрилансер; Среднемесячная заработная плата: %.2f (руб.); Почасовая ставка: %.2f (руб.)",
                 surname, name, calculateSalary(), salary);
     }
 }
@@ -83,7 +83,7 @@ class Worker extends Employee{
 
     @Override
     public String toString() {
-        return String.format("%s %s; Рабочий; Среднемесячная заработная плата (фиксированная месячная оплата): %.2f (руб.)",
+        return String.format("%10s %10s;   Рабочий; Среднемесячная заработная плата (фиксированная месячная оплата):    %.2f (руб.)",
                 surname, name, salary);
     }
 }
