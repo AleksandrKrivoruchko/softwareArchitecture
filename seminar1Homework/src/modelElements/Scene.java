@@ -11,6 +11,11 @@ public class Scene {
         id = ++counter;
     }
 
+    public Camera method1(Camera c) {
+        return null;
+    }
 
-
+    public Camera method2(Camera c, Camera c1){
+        return null;
+    }
 }

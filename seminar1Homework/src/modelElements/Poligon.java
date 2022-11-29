@@ -1,7 +1,6 @@
 package modelElements;
 
 import java.util.Collection;
-import java.util.List;
 
 public class Poligon {
     public Collection<Point3D> points;

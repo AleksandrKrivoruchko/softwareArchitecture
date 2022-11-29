@@ -1,4 +1,3 @@
 package modelElements;
 
-public class Angle3D {
-}
+public class Angle3D { }

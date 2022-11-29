@@ -1,5 +1,7 @@
 package inMemoryModel;
 
 public interface IModelChanger {
-    void notifyChange(IModelChanger sender);
+    void RegisterModelChanger(IModelChangedObserver o);
+    void RemoveModelChanger(IModelChangedObserver o);
+    void notifyChange();
 }
