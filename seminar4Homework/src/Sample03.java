@@ -1,5 +1,3 @@
-package ru.geekbrains.lesson3;
-
 import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -184,6 +182,7 @@ class BusStation{
 
     //TODO: 1. Доработать модуль BusStation
     // 2. Доработать модуль (например TicketProvider) с точки зрения контрактного программирования.
+
 }
 
 class CustomerProvider{
