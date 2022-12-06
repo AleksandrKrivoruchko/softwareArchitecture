@@ -23,12 +23,30 @@ public class Sample03 {
         Core core = new Core();
 
         MobileApp mobileApp = new MobileApp(core.getCustomerProvider(), core.getTicketProvider());
-        mobileApp.searchTicket(new Date());
-        mobileApp.buyTicket("1000000000000033");
-        mobileApp.buyTicket("1000000000000033");
-        mobileApp.buyTicket("1000000000000033");
-        mobileApp.searchTicket(new Date());
+        Date date = new Date();
+        try {
+            mobileApp.searchTicket(date);
+        } catch (RuntimeException ex) {
+            System.out.println(ex.getMessage());
+        }
 
+        mobileApp.buyTicket("1000000000000033", date);
+        mobileApp.buyTicket("1000000000000033", date);
+        mobileApp.buyTicket("1000000000000033", date);
+        try {
+            System.out.print(mobileApp.searchTicket(date));
+        } catch (RuntimeException ex) {
+            System.out.println(ex.getMessage());
+        }
+
+        BusStation busStation = new BusStation(mobileApp.getTicketProvider());
+        String answer = busStation.checkTicket(mobileApp.getCustomer()
+                .getTickets().stream().findFirst().get());
+        System.out.println(answer);
+
+        answer = busStation.checkTicket(mobileApp.getCustomer()
+                .getTickets().stream().findFirst().get());
+        System.out.println(answer);
     }
 
 }
@@ -59,13 +77,17 @@ class Customer{
 }
 
 class Ticket{
-
+    private static int count;
     private int id;
     private int customerId;
     private Date date;
     private String qrcode;
 
     private boolean enable = true;
+
+    {
+        id = ++count;
+    }
 
     public int getId() {
         return id;
@@ -82,13 +104,29 @@ class Ticket{
     public String getQrcode() {
         return qrcode;
     }
+    public void setQrcode() {
+        qrcode = String.format("%d %d %s", id, customerId, date);
+    }
 
     public int getCustomerId() {
         return customerId;
     }
+    public void setCustomerId(int customerId) {
+        this.customerId = customerId;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
 
     public Date getDate() {
         return date;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Билет %d, id клиента %d, дата %s, %s",
+                id, customerId, date, isEnable() ? "действителен" : "использован");
     }
 }
 
@@ -148,6 +186,14 @@ class Database{
         return ++counter;
     }
 
+    public void addCustomer(Customer customer) {
+        customers.add(customer);
+    }
+
+    public void addTicket(Ticket ticket) {
+        tickets.add(ticket);
+    }
+
 }
 
 /**
@@ -158,18 +204,32 @@ class MobileApp{
     private  Customer customer;
     private final TicketProvider ticketProvider;
 
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public TicketProvider getTicketProvider() {
+        return ticketProvider;
+    }
+
     public MobileApp(CustomerProvider customerProvider, TicketProvider ticketProvider){
         this.ticketProvider = ticketProvider;
         customer = customerProvider.getCustomer("login", "password");
     }
 
 
-    public void searchTicket(Date date){
+    public String searchTicket(Date date){
         customer.setTickets(ticketProvider.searchTicket(customer.getId(), date));
+        Collection<Ticket> tickets = customer.getTickets();
+        StringBuilder sb = new StringBuilder();
+        for (Ticket ticket : tickets) {
+            sb.append(ticket).append("\n");
+        }
+        return sb.toString();
     }
 
-    public boolean buyTicket(String cardNo){
-        return ticketProvider.buyTicket(customer.getId(), cardNo);
+    public boolean buyTicket(String cardNo, Date date){
+        return ticketProvider.buyTicket(customer.getId(), cardNo, date);
     }
 
 }
@@ -192,10 +252,10 @@ class BusStation{
      * @return String
      */
     public String checkTicket(Ticket ticket) {
+        if (!ticket.isEnable()) {
+            return "Ваш билет уже был использован!!!";
+        }
         if(ticketProvider.checkTicket(ticket.getQrcode())) {
-            if (!ticket.isEnable()) {
-                return "Ваш билет уже был использован!!!";
-            }
             return "Проходите в автобус!";
         }
         return "У вас фальшивый билет!!!";
@@ -213,7 +273,7 @@ class CustomerProvider{
     public Customer getCustomer(String login, String password){
         // ... проверка логина и пароля
         if(database.getCustomers().isEmpty()) {
-            return new Customer();
+            database.addCustomer(new Customer());
         }
         return database.getCustomers().stream().findFirst().get();
     }
@@ -234,7 +294,7 @@ class TicketProvider{
     // 2. Доработать модуль (например TicketProvider) с точки зрения контрактного программирования.
     /**
      * Поиск билетов
-     * @param clientId >= 0
+     * @param clientId > 0
      * @param date != null
      * @throws RuntimeException
      * @return Collection<Ticket>
@@ -284,11 +344,18 @@ class TicketProvider{
      * @param cardNo
      * @return
      */
-    public boolean buyTicket(int clientId, String cardNo){
-
+    public boolean buyTicket(int clientId, String cardNo, Date date){
         double amount = database.getTicketAmount();
         int orderId =  database.createTicketOrder(clientId);
-        return paymentProvider.buy(orderId, cardNo, amount);
+        if (paymentProvider.buy(orderId, cardNo, amount)) {
+            Ticket ticket = new Ticket();
+            ticket.setDate(date);
+            ticket.setCustomerId(clientId);
+            ticket.setQrcode();
+            database.addTicket(ticket);
+            return true;
+        }
+        return false;
     }
 
     /**
