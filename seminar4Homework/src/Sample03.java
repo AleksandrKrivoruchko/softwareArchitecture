@@ -1,4 +1,3 @@
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -179,10 +178,28 @@ class MobileApp{
  * Автобусная станция
  */
 class BusStation{
+    // TODO: 1. Доработать модуль BusStation
 
-    //TODO: 1. Доработать модуль BusStation
-    // 2. Доработать модуль (например TicketProvider) с точки зрения контрактного программирования.
+    private  TicketProvider ticketProvider;
 
+    public BusStation(TicketProvider ticketProvider) {
+        this.ticketProvider = ticketProvider;
+    }
+
+    /**
+     * Метод проверяет билет
+     * @param ticket
+     * @return String
+     */
+    public String checkTicket(Ticket ticket) {
+        if(ticketProvider.checkTicket(ticket.getQrcode())) {
+            if (!ticket.isEnable()) {
+                return "Ваш билет уже был использован!!!";
+            }
+            return "Проходите в автобус!";
+        }
+        return "У вас фальшивый билет!!!";
+    }
 }
 
 class CustomerProvider{
@@ -195,6 +212,9 @@ class CustomerProvider{
 
     public Customer getCustomer(String login, String password){
         // ... проверка логина и пароля
+        if(database.getCustomers().isEmpty()) {
+            return new Customer();
+        }
         return database.getCustomers().stream().findFirst().get();
     }
 
@@ -211,21 +231,51 @@ class TicketProvider{
         this.paymentProvider = paymentProvider;
     }
 
+    // 2. Доработать модуль (например TicketProvider) с точки зрения контрактного программирования.
     /**
      * Поиск билетов
-     * @param clientId
-     * @param date
-     * @return
+     * @param clientId >= 0
+     * @param date != null
+     * @throws RuntimeException
+     * @return Collection<Ticket>
      */
     public Collection<Ticket> searchTicket(int clientId, Date date){
+        // Предусловие
+        if(clientId <= 0) {
+            throw new RuntimeException("clientID не может быть отрицательным или равным нулю!!!");
+        }
+        if(date == null) {
+            throw  new RuntimeException("Дата не может быть null!!!");
+        }
+
+        // Инвариант
+        if(!isCustomerInDatabase(clientId)) {
+            throw new RuntimeException(String.format("Клиента с id = %d нет в базе!", clientId));
+        }
 
         Collection<Ticket> tickets = new ArrayList<>();
         for (Ticket ticket: database.getTickets()) {
             if (ticket.getCustomerId() == clientId && ticket.getDate().equals(date))
                 tickets.add(ticket);
         }
+
+        // Постусловие
+        if(tickets.isEmpty()) {
+            throw new RuntimeException("У клиента нет билетов с этой датой!");
+        }
+
         return tickets;
 
+    }
+
+    private boolean isCustomerInDatabase(int clientId) {
+        Collection<Customer> customers = database.getCustomers();
+        for (Customer client : customers) {
+            if(client.getId() == clientId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
