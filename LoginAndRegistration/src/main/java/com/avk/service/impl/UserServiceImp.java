@@ -5,7 +5,7 @@ import com.avk.dao.impl.UserDaoImpl;
 import com.avk.entity.User;
 import org.springframework.util.DigestUtils;
 
-public class UserService implements com.avk.service.UserService {
+public class UserServiceImp implements com.avk.service.UserService {
     UserDao userDao = new UserDaoImpl();
     @Override
     public String login(User user) {
